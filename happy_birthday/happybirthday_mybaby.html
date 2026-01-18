@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>💖 LoveOS Terminal — Birthday Edition</title>
+
+<style>
+*{box-sizing:border-box;font-family:'Consolas','Courier New',monospace}
+body{
+  margin:0;min-height:100vh;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(255,94,168,.18), transparent 60%),
+    radial-gradient(800px 600px at 90% 20%, rgba(61,255,155,.14), transparent 55%),
+    radial-gradient(circle at top,#1b1f3b,#05050a 70%);
+  display:flex;justify-content:center;align-items:center;color:#eaeaf0;
+}
+
+/* ================= 主畫面 ================= */
+.wrap{
+  width:95%;max-width:1100px;
+  background:rgba(20,20,40,.55);
+  backdrop-filter:blur(18px);
+  border-radius:22px;
+  padding:24px;
+  display:grid;
+  grid-template-columns:1fr 260px;
+  gap:22px;
+  box-shadow:0 0 40px rgba(120,120,255,.18);
+}
+
+.terminal{
+  background:#05060d;border-radius:16px;padding:18px;
+  box-shadow:inset 0 0 20px rgba(0,0,0,.8);
+  display:flex;flex-direction:column;
+  min-height:520px;
+}
+
+.term-header{color:#9aa0ff;font-size:14px;margin-bottom:10px;opacity:.85}
+.term-body{flex:1;overflow-y:auto;white-space:pre-wrap;line-height:1.65;font-size:16px}
+.input-line{display:flex;align-items:center;gap:8px;margin-top:8px}
+.prompt{color:#7CFFB2;font-weight:700}
+.cursor{display:inline-block;width:10px;background:#9aa0ff;margin-left:2px;animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+
+.side{display:flex;flex-direction:column;gap:14px}
+.panel{
+  background:rgba(0,0,0,.28);
+  border-radius:18px;
+  padding:16px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 0 18px rgba(0,0,0,.4);
+}
+.panel h3{margin:0 0 8px 0;font-size:16px}
+.stat{margin-top:6px;font-size:15px}
+.big{font-size:22px;font-weight:bold;margin-top:4px}
+
+.btn{
+  background:linear-gradient(135deg,#6a6dff,#a78bfa);
+  border:none;border-radius:999px;padding:14px 22px;color:white;
+  cursor:pointer;font-size:15px;
+  box-shadow:0 8px 22px rgba(120,120,255,.4);
+}
+.btn.alt{background:linear-gradient(135deg,#ff5ea8,#ff87c5)}
+.hint{font-size:12px;opacity:.65;text-align:center;line-height:1.5}
+
+/* ================= Modal ================= */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:50}
+.modal{
+  background:#0b0f1a;border-radius:18px;max-width:760px;width:92%;
+  padding:18px;box-shadow:0 0 40px rgba(0,0,0,.6);
+  border:1px solid rgba(255,255,255,.10);
+}
+.modal h2{margin:0 0 10px 0}
+.modal img{max-width:100%;border-radius:14px;margin-top:10px}
+.modal p{line-height:1.85;margin:0 0 10px 0;color:#d7d7ee}
+
+/* ================= 信封 ================= */
+#envelopeScreen{
+  position:fixed;inset:0;z-index:999;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at top,#2a1b3d,#05050a 70%);
+}
+#envelope{
+  width:280px;height:200px;cursor:pointer;
+  background:linear-gradient(135deg,#ff6aa2,#ff9acb);
+  border-radius:16px;
+  box-shadow:0 20px 60px rgba(255,105,180,.45);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:bold;color:white;
+  transition:.8s;
+}
+
+/* ================= 愛心 ================= */
+.heart{position:fixed;font-size:18px;pointer-events:none;animation:floatUp 1.8s ease forwards;z-index:5}
+@keyframes floatUp{
+  from{transform:translateY(0) scale(1);opacity:1}
+  to{transform:translateY(-120px) scale(1.4);opacity:0}
+}
+
+/* ================= 📱 手機版 ================= */
+@media (max-width:900px){
+  body{align-items:flex-start;padding:12px 0}
+  .wrap{grid-template-columns:1fr;padding:14px}
+  .terminal{min-height:420px}
+  .btn{width:100%;padding:16px;font-size:16px}
+  .modal img{max-height:65vh;object-fit:contain}
+  #envelope{width:240px;height:170px;font-size:20px}
+}
+@media (max-width:480px){
+  .term-body{font-size:14px}
+  .terminal{min-height:380px}
+  .big{font-size:18px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="envelopeScreen">
+  <div id="envelope">💌 點一下開信封</div>
+</div>
+
+<div class="wrap" id="mainApp" style="display:none;">
+  <div class="terminal">
+    <div class="term-header">💻 💞Love you — forever💞</div>
+    <div class="term-body" id="terminal"></div>
+    <div class="input-line" onclick="focusInput()">
+      <span class="prompt">➜</span>
+      <span id="input"></span><span class="cursor"></span>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="panel">
+      <h3>💞 在一起的日子</h3>
+      <div class="big" id="daysBox">0 天</div>
+      <div class="stat" id="detailTime"></div>
+    </div>
+
+    <div class="panel">
+      <button class="btn" id="resetBtn">♻ Reset 告白</button>
+      <div class="hint">終端機仍可輸入：help / love / kiss / memory / photo / letter / forever</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <div id="modalContent"></div>
+    <button class="btn" onclick="closeModal()">關閉</button>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  name: "北鼻",
+  togetherSince: "2024-09-20",
+  bootText: `北鼻生日快樂 🎂
+
+最近太忙了，一直沒有時間好好地陪你，
+連生日卡片都讓你等到了現在 😢
+
+但這個卡片可是我偷偷用心準備的，
+希望你會喜歡。
+
+> initializing love...
+> compiling memories...
+> loading hugs...
+> system status: deeply in love.
+
+輸入 help 看看可以做什麼 💗
+`,
+  memories: [
+    "第一次見面的那天，一見到妳我就想說怎麼有這麼可愛的女生，第一眼就對你一見鍾情了。",
+    "而且你還能體諒我塞車，甚至還買飲料給我，讓我覺得你是個又可愛性格又好的女孩子。",
+    "你不只是我的另一半，你是我的 the only best choice。",
+    "我會永遠愛你的，我們要永遠這麼甜蜜下去唷❤️"
+  ],
+  letter: `Dear 親愛的楚涵北鼻❤️
+這是我們一起度過的第二次生日,
+雖然我每次都雷雷的,甚至還都被你猜到我要做什麼,
+但你還是都會裝傻，甚至不嫌棄我,給我滿滿的情緒價值😅,
+讓我感受到滿滿的回饋,今年是我們的大年,我們一起換了工作,
+雖然工作更辛苦,我們能相處的時間也變少了,
+但是這也讓我們更加珍惜能夠一起相處的時光,
+跟你在一起讓我第一次有了想要為了我們的未來,
+一起去努力,一起進步、一起變好的決心,
+謝謝妳出現在我的生命裡，讓我有動力變得更好,
+我會努力賺錢讓妳過上妳心中想像中的美好快樂的日子!!!,
+For 愛妳的北鼻。`,
+  photos: ["image/001.jpg","image/002.jpg","image/003.jpg","image/004.jpg","image/005.jpg","image/006.jpg","image/007.jpg","image/008.jpg","image/009.jpg"]
+};
+
+const terminal=document.getElementById("terminal");
+const inputEl=document.getElementById("input");
+const resetBtn=document.getElementById("resetBtn");
+const daysBox=document.getElementById("daysBox");
+const detailTime=document.getElementById("detailTime");
+
+let idx=0, buffer="", timer=null;
+let photoIndex=0, photoTimer=null, photoPlaying=false;
+
+function focusInput(){
+  const fake=document.createElement("input");
+  fake.style.position="fixed";fake.style.opacity=0;
+  document.body.appendChild(fake);fake.focus();
+  setTimeout(()=>fake.remove(),200);
+}
+
+function daysTogether(){
+  const start=new Date(CONFIG.togetherSince+"T00:00:00");
+  const now=new Date();
+  const diff=now-start;
+  const days=Math.floor(diff/86400000);
+  const h=Math.floor(diff/3600000)%24;
+  const m=Math.floor(diff/60000)%60;
+  const s=Math.floor(diff/1000)%60;
+  daysBox.textContent=days+" 天";
+  detailTime.textContent=`${h} 小時 ${m} 分 ${s} 秒`;
+}
+setInterval(daysTogether,1000);daysTogether();
+
+function typeBoot(){
+  if(idx<CONFIG.bootText.length){
+    terminal.textContent+=CONFIG.bootText[idx++];
+    terminal.scrollTop=terminal.scrollHeight;
+    timer=setTimeout(typeBoot,28);
+  }
+}
+function resetAll(){
+  clearTimeout(timer);
+  terminal.textContent="";
+  inputEl.textContent="";
+  buffer="";idx=0;
+  typeBoot();
+}
+resetBtn.onclick=resetAll;
+
+function append(t){terminal.textContent+=t+"\n";terminal.scrollTop=terminal.scrollHeight;}
+
+function openModal(title,html){
+  modalTitle.textContent=title;
+  modalContent.innerHTML=html;
+  overlay.style.display="flex";
+}
+function closeModal(){
+  overlay.style.display="none";
+  if(photoTimer){clearInterval(photoTimer);photoTimer=null;photoPlaying=false;photoIndex=0;}
+}
+overlay.onclick=(e)=>{if(e.target===overlay)closeModal();}
+
+function spawnHeart(x,y){
+  const el=document.createElement("div");
+  el.className="heart";
+  el.textContent=["💗","💖","💘","💝","💞","❤️"][Math.floor(Math.random()*6)];
+  el.style.left=x+"px";el.style.top=y+"px";
+  el.style.fontSize=(14+Math.random()*16)+"px";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1800);
+}
+
+function runCommand(cmd){
+  const c=cmd.toLowerCase();
+  append("➜ "+cmd);
+
+  if(c==="help"){append("love / kiss / memory / photo / letter / forever / clear");return;}
+  if(c==="clear"){terminal.textContent="";return;}
+  if(c==="love"){append("I love you, "+CONFIG.name+" ❤️");return;}
+  if(c==="kiss"){append("💋 mwah");return;}
+
+  if(c==="memory"){
+    let i=0;function next(){if(i<CONFIG.memories.length){append("["+(i+1)+"] "+CONFIG.memories[i++]);setTimeout(next,900);}}
+    next();return;
+  }
+
+  if(c==="photo"){
+    if(photoPlaying){clearInterval(photoTimer);photoIndex=0;}
+    photoPlaying=true;
+    function show(){
+      openModal("📷 我們的照片","<img src='"+CONFIG.photos[photoIndex]+"'>");
+      photoIndex++;
+      if(photoIndex>=CONFIG.photos.length){clearInterval(photoTimer);photoPlaying=false;photoIndex=0;}
+    }
+    show();photoTimer=setInterval(show,1500);return;
+  }
+
+  if(c==="letter"){
+  openModal("💌 生日卡片",
+    "<div id='letterBox' style='line-height:1.9;font-size:16px;white-space:pre-wrap'></div>"
+  );
+
+  const lines = CONFIG.letter
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l);
+
+  const box = document.getElementById("letterBox");
+
+  let lineIndex = 0;
+  let charIndex = 0;
+
+  function typeNextChar(){
+
+    if(lineIndex >= lines.length){
+      const end = document.createElement("p");
+      end.innerHTML = "<br>❤️ 情書傳送完成。";
+      box.appendChild(end);
+      return;
+    }
+
+    if(!box.lastChild || box.lastChild.getAttribute("data-line") !== String(lineIndex)){
+      const p = document.createElement("p");
+      p.setAttribute("data-line", lineIndex);
+      p.textContent = "";
+      box.appendChild(p);
+    }
+
+    const currentLine = lines[lineIndex];
+    const p = box.lastChild;
+
+    if(charIndex < currentLine.length){
+      p.textContent += currentLine.charAt(charIndex);
+      charIndex++;
+      modalContent.scrollTop = modalContent.scrollHeight;
+      setTimeout(typeNextChar, 40);   // 👈 每個字的速度
+    }else{
+      // 一行完成 → 小停頓 + 愛心
+      for(let h=0; h<3; h++){
+        spawnHeart(
+          window.innerWidth*0.3 + Math.random()*window.innerWidth*0.4,
+          window.innerHeight*0.3 + Math.random()*window.innerHeight*0.3
+        );
+      }
+      lineIndex++;
+      charIndex = 0;
+      setTimeout(typeNextChar, 600);  // 👈 每行停頓
+    }
+  }
+
+  typeNextChar();
+  return;
+}
+
+  if(c==="forever"){append("我不太會說什麼情話，但在我心中妳已經是我認定想要一起度過餘生的那個女孩子了，北鼻我愛你💍[ps.開一下妳睡覺地方的床頭櫃]");return;}
+  append("command not found");
+}
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Backspace"){buffer=buffer.slice(0,-1);inputEl.textContent=buffer;return;}
+  if(e.key==="Enter"){runCommand(buffer);buffer="";inputEl.textContent="";return;}
+  if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){buffer+=e.key;inputEl.textContent=buffer;}
+});
+
+resetAll();
+
+envelope.onclick=()=>{
+  envelope.style.transform="scale(1.4)";
+  setTimeout(()=>{
+    envelopeScreen.style.display="none";
+    mainApp.style.display="grid";
+    resetAll();
+  },600);
+}
+</script>
+</body>
+</html>
+
+
